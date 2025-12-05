@@ -190,6 +190,10 @@ conf = lighter.Configuration(
         self.proxy: Optional[str] = None
         """Proxy URL
         """
+        self.proxy_list: Optional[list[str]] = None
+        """List of proxy URLs for rotation. When set, requests will round-robin
+           through these proxies. Takes precedence over self.proxy.
+        """
         self.proxy_headers = None
         """Proxy headers
         """
