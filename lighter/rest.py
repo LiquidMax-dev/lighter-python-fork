@@ -14,6 +14,8 @@
 
 import io
 import json
+import logging
+import random
 import re
 import ssl
 from typing import Optional, Union
@@ -22,6 +24,9 @@ import aiohttp
 import aiohttp_retry
 
 from lighter.exceptions import ApiException, ApiValueError
+
+logger = logging.getLogger(__name__)
+PROXY_USAGE_PROBABILITY = 0.5
 
 RESTResponseType = aiohttp.ClientResponse
 
@@ -74,6 +79,8 @@ class RESTClientObject:
         )
 
         self.proxy = configuration.proxy
+        self.proxy_list = configuration.proxy_list
+        self._proxy_index = 0
         self.proxy_headers = configuration.proxy_headers
 
         # https pool manager
@@ -156,7 +163,13 @@ class RESTClientObject:
             "headers": headers
         }
 
-        if self.proxy:
+        # Proxy rotation with probability control
+        if self.proxy_list and random.random() < PROXY_USAGE_PROBABILITY:
+            proxy = self.proxy_list[self._proxy_index % len(self.proxy_list)]
+            self._proxy_index += 1
+            args["proxy"] = proxy
+            logger.info(f"Lighter request via proxy: {proxy}")
+        elif self.proxy:
             args["proxy"] = self.proxy
         if self.proxy_headers:
             args["proxy_headers"] = self.proxy_headers
